@@ -11,3 +11,4 @@ pip install libChEBIpy
 //# extract_from_bulk:
 //Asks for the name of the .tar.gz to create a folder with all the files.
 
+.
