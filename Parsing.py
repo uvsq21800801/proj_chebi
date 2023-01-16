@@ -28,8 +28,8 @@ def parsing():
     
     #Parsing sur toutes les molécules 3 stars
     #telechargement()
-    suppl = Chem.SDMolSupplier('ChEBI_lite_3star.sdf', sanitize = False) #Lecture fichier sdf et transformation en tableau de mol
-    fichier = open('ChEBI_lite_3star.sdf', 'r') #Ouverture fichier sdf pour récupérer ids chebi et noms molécules
+    suppl = Chem.SDMolSupplier('ChEBI_complete_3star.sdf', sanitize = False) #Lecture fichier sdf et transformation en tableau de mol
+    fichier = open('ChEBI_complete_3star.sdf', 'r') #Ouverture fichier sdf pour récupérer ids chebi et noms molécules
    
     for mol in suppl:
 
@@ -48,7 +48,7 @@ def parsing():
         
         if mol is not None:
             #Passage en SMILES puis en mol
-            smiles = Chem.MolToSmiles(mol)
+            #smiles = Chem.MolToSmiles(mol)
             #print(smiles)
             #m = Chem.MolFromSmiles(smiles)
         
