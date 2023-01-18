@@ -48,12 +48,6 @@ def parsing():
             # Convert the graph to sparse6 format
             s6 = nx.write_sparse6(G, repertoire, header=False)
 
-            with open(repertoire) as f:
-                linees = f.readlines()
-
-            linees[0] = linees[0][1:]
-            with open(repertoire, "w") as f:
-                f.writelines(linees)
 
             i = i + 1 
             
