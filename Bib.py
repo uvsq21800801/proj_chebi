@@ -11,7 +11,7 @@ from operator import attrgetter
 import urllib.request
 import gzip
 import shutil
-
+from urllib.request import urlopen
 
 #Téléchargement d'une molécule spécifique depuis chebi (format sdf)
 def telechargement_mol(idmol):
@@ -21,9 +21,10 @@ def telechargement_mol(idmol):
 
 #Téléchargement, extraction du fichier des 50000 molécules 3 stars de Chebi (format sdf)
 def telechargement():
+
     loc = "chebi.sdf.gz" #le chemin absolu vers ton fichier en local
     url = "ftp://ftp.ebi.ac.uk/pub/databases/chebi/SDF/ChEBI_complete_3star.sdf.gz" #le lien de téléchargement
-    req = urllib.request.urlretrieve(url, loc)
+    req = urlopen(url, loc)
 
     #on décompresse le fichier téléchargé avec ça
     new_file = "ChEBI_complete_3star.sdf" #le chemin absolu vers ton fichier décompressé en local
@@ -46,6 +47,14 @@ def creation_dossier_molSDF():
         if not os.path.isdir('MoleculesSDF'):
             Raise
 
+
+def get_numline(lines,num):
+    mot=lines[num+1]
+    while "$$$$" not in mot:
+        num=num+1
+        mot=lines[num]
+    return num+1
+
 #Lecture nom molecule et id chebi
 def nom_id(fichier, numeroligne):
     ligne_prec = "> <ChEBI Name>" #la ligne qui précède le nom
@@ -61,6 +70,34 @@ def nom_id(fichier, numeroligne):
     numeroligne += 1
     result = [idmolecule, nommolecule, str(numeroligne)]
     return result
+
+
+def molecules(lines, j, nbatom):
+    
+    result=[]
+    s=j
+    while j<s+nbatom:
+            mool=lines[j]
+            molecules = mool.split(' ')
+            molecules=[x for x in molecules if x]
+            result.append(molecules[3])
+            j = j + 1
+    return result
+
+
+def get_matrix(lines, j, nbatom):
+    
+    result=[]
+    s=j
+    while j<nbatom+s:
+            mool=lines[j]
+            molecules = mool.split(' ')
+            molecules=[x for x in molecules if x]
+            result.append([molecules[0],molecules[1],molecules[2]])
+            j = j + 1
+    return result
+
+
 
 #Calcul formule de la molécule
 def formule_molecule(molecule):
