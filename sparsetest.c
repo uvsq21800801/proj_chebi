@@ -7,26 +7,6 @@
 #include <ctype.h>
 
 
-// lis un fichier texte generér par gtools et le transforme en sparse graphe 
-sparsegraph lire_sparse_graphe_fichier(char* nom_fichier) {
-	FILE * fp;
-
-   	fp = fopen (nom_fichier, "rb+");
-    char buffer[1000];
-    sparsegraph sg;
-	while ( fscanf(fp, "%s", buffer) != EOF )
-		{   
-		   SG_INIT(sg);
-		   int num_loops;
-		   stringtosparsegraph(buffer, &sg, &num_loops);
-		   //performCheck(&sg);
-		   //SG_FREE(sg);
-		}
-	fclose(fp);
-	return sg;
-}
-
-
 sparsegraph lire_sparse_graphe_fichier_molecule(int id_molecule){
 	
 	printf("\nMolécule %d : \n", id_molecule);
@@ -74,6 +54,10 @@ sparsegraph lire_sparse_graphe_fichier_molecule(int id_molecule){
 		            nb_bonds = atoi(token)*2;
 		            token = strtok(NULL, " ");
 		            SG_ALLOC(sg,nb_sommets,nb_bonds,"malloc");// on alloue la memoire dynamiquement au sparse graphe selon le nombre de sommets.
+		            sg.nv = nb_sommets;
+		            sg.nde = nb_bonds;
+		            printf("\nNbsommets = %d\n", sg.nv);
+		            printf("\nNbaretes = %d\n", sg.nde);
         		}
 		}
 		if(lineCount == 3){
@@ -134,6 +118,7 @@ void out_sparseGraphe(char* nom_fichier, sparsegraph sg1){
 int
 main(int argc, char *argv[])
 {
+
     DYNALLSTAT(int,lab1,lab1_sz);
     DYNALLSTAT(int,lab2,lab2_sz);
     DYNALLSTAT(int,ptn,ptn_sz);
@@ -153,6 +138,7 @@ main(int argc, char *argv[])
  /* Select option for canonical labelling */
 
     options.getcanon = TRUE;
+    
  
  /* Read the number of vertices and process it */
 
@@ -165,59 +151,36 @@ main(int argc, char *argv[])
     DYNALLOC1(int,ptn,ptn_sz,n,"malloc");
     DYNALLOC1(int,orbits,orbits_sz,n,"malloc");
     DYNALLOC1(int,map,map_sz,n,"malloc");
-    	
+
     
     printf("Veuillez introduire le Id de la premiere molécule : ");
     scanf("%d",&id_molecule1);
     printf("\nVeuillez maintenant introduire le Id de la deuxiéme molécule : ");
     scanf("%d",&id_molecule2);
-    sparsegraph sg1 = lire_sparse_graphe_fichier("graphe1.txt");
-    sparsegraph sg2 = lire_sparse_graphe_fichier_molecule(7);
-    sparsegraph sg3 = lire_sparse_graphe_fichier_molecule(8);
     
-	/*printf("\nSG2.dlen = %d", sg2.dlen);
-    printf("\nSG2.vlen = %d", sg2.vlen);
-    printf("\nSG2.elen = %d\n", sg2.elen);
+    sparsegraph sg1 = lire_sparse_graphe_fichier_molecule(id_molecule1);
+    sparsegraph sg2 = lire_sparse_graphe_fichier_molecule(id_molecule2);
     
-    printf("\nNombres de sommets SG2 = %d", sg2.nv);
-    printf("\nNombres de aretes SG2 = %d", sg2.nde);
-    i = 0;
-    printf("\nSG2.d : ");
-    while(i< sg2.dlen){
-    	printf("%d ",sg2.d[i]);
-    	i++;
-	}
-    i = 0;
-    printf("\nSG2.v : ");
-    while(i< sg2.vlen){
-    	printf("%d ",sg2.v[i]);
-    	i++;
-	}
-	i = 0;
-    printf("\nSG2.e : ");
-    while(i< sg2.elen){
-    	printf("%d ",sg2.e[i]);
-    	i++;
-	}*/
+    // afficher un sparse graphe avec une matrice d'adjacence
+    /*out_sparseGraphe("adjacency_matrix1.txt", sg2);
+    out_sparseGraphe("adjacency_matrix2.txt", sg1);*/
     
-    	 
     /*on applique sparse nauty sur les deux graphes */
             
-        sparsenauty(&sg2,lab1,ptn,orbits,&options,&stats,&cg1);
-        sparsenauty(&sg3,lab2,ptn,orbits,&options,&stats,&cg2);
+    sparsenauty(&sg1,lab1,ptn,orbits,&options,&stats,&cg1);
+    sparsenauty(&sg2,lab2,ptn,orbits,&options,&stats,&cg2);
             
-    // afficher un sparse graphe avec une matrice d'adjacence
-    out_sparseGraphe("adjacency_matrix.txt", sg2);
-
-    /* Compare canonically labelled graphs */
-
-        if (aresame_sg(&cg1,&cg2))
+    
+	
+		
+    if (aresame_sg(&cg1,&cg2))
         {
             printf("\nLes graphes sont isomoprhes ! \n");
-        }
-        else{
+    }else{
             printf("\nLes graphes ne sont pas isomorphes.\n");
-        }
+    }
+		
+	    
     printf("Press ENTER key to Continue\n");  
 	getchar();
 }
