@@ -22,36 +22,59 @@ def parsing():
     infoerror = "Molécules non lues: \n"
     cpterror = 0
     numeroligne = 0 #compteur de lignes pour retrouver les noms de molécules et id chebi
-    
+    num=0
     creation_dossier_mol()
     creation_dossier_molSDF()
     
     #Parsing sur toutes les molécules 3 stars
+
+
     #telechargement()
     suppl = Chem.SDMolSupplier('ChEBI_lite_3star.sdf', sanitize = False) #Lecture fichier sdf et transformation en tableau de mol
     fichier = open('ChEBI_lite_3star.sdf', 'r') #Ouverture fichier sdf pour récupérer ids chebi et noms molécules
-   
+    lines=fichier.readlines()
+    fichier.close()
+    
+
+    fichier = open('ChEBI_lite_3star.sdf', 'r') #Ouverture fichier sdf pour récupérer ids chebi et noms molécules
+
+    k=0
     for mol in suppl:
 
         #Lecture nom molecule et id chebi
+        #Lecture nom molecule et id chebi  
+
         res = []
         res = nom_id(fichier, numeroligne)
         idmolecule = res[0]
         nommolecule = res[1]
         numeroligne = int(res[2])
-        
+
+
+        S=num
+        num = get_numline(lines,num)
+
         try:
             mol.UpdatePropertyCache(strict=False)
             #mol = Chem.RemoveAllHs(mol, sanitize=False)
         except:
             pass
         
+
         if mol is not None:
+
             #Passage en SMILES puis en mol
             #smiles = Chem.MolToSmiles(mol)
             #print(smiles)
             #m = Chem.MolFromSmiles(smiles)
         
+ 
+            j = 4 + mol.GetNumAtoms() + S
+            L=get_matrix(lines,j,mol.GetNumBonds())
+
+            j = 4 + S 
+            molecu = molecules(lines,j,mol.GetNumAtoms())
+
 
             name = "Molecule_" + str(i) + ".txt"
             repertoire = "Molecules/" + idmolecule[6:] + ".txt"
@@ -81,7 +104,19 @@ def parsing():
             #Ajout de la formule de molécule
             infos += "\n" + formuledecomp + nommolecule 
 
-            #Ce qu'on  ecrit dans le fichier
+            spt=''
+            for s in molecu:
+                spt = spt + s +' '
+            infos += spt + "\n"
+
+
+            for s in L: 
+                strong=''
+                for p in s:
+                    strong = strong + p + ' '
+                infos += strong + "\n"
+
+            #Cequ'on  ecrit dans le fichier
             #infosDebut contient un bit si molécule est lue ou non, nombre d'atomes de la molécule, de liaisons et taille de d, v et e
             #infos contient ce qui suit: d,v et e, le nombre de types d'atomes différents, formule chimique, nom molécule et coloration
             infosFinal = infosDebut + infos
@@ -90,6 +125,7 @@ def parsing():
             outf = open(repertoire, 'w+')
             outf.write(infosFinal)
             outf.close()
+
         else:
             #Molécule pas lue
             name = "Molecule_" + str(i) + ".txt"
@@ -108,6 +144,6 @@ def parsing():
     outerror.close()
     print("Il y a {} molécules dans le fichier".format(i-1) + " dont " + str(cpterror) + " molécules non lues")
     fichier.close()
-
+    
 
 parsing()
