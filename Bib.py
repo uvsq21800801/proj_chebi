@@ -48,6 +48,14 @@ def creation_dossier_molSDF():
             Raise
 
 
+def creation_dossier_molSparse6():
+    try:
+        os.mkdir('MoleculesSparse6')
+    except OSError:
+        if not os.path.isdir('MoleculesSparse6'):
+            Raise
+
+
 def get_numline(lines,num):
     mot=lines[num+1]
     while "$$$$" not in mot:
