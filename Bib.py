@@ -12,6 +12,7 @@ import urllib.request
 import gzip
 import shutil
 from urllib.request import urlopen
+import requests
 
 #Téléchargement d'une molécule spécifique depuis chebi (format sdf)
 def telechargement_mol(idmol):
@@ -19,6 +20,33 @@ def telechargement_mol(idmol):
     url = "https://www.ebi.ac.uk/chebi/saveStructure.do?sdf=true&chebiId=" + idmol + "&imageId=0" #le lien de téléchargement A COMPLETER
     req = urllib.request.urlretrieve(url, loc)
 
+#Téléchargement, extraction du fichier des 50000 molécules 3 stars de Chebi (format sdf)
+def telechargement(lib_path):
+
+    # récupération du chemin de l'utilisateur
+    current_path = os.path.abspath("parsing.py")
+    path_len = len(current_path)
+    len_to_delete = len("parsing.py")
+    lib_path = current_path[:path_len-len_to_delete]
+    
+    url = 'https://ftp.ebi.ac.uk/pub/databases/chebi/SDF/ChEBI_lite_3star.sdf.gz'
+
+    # Le dataset ne sera téléchargé que si il n'a toujours pas
+    # encore été téléchargé
+    if not os.path.exists(os.path.join(lib_path, 'ChEBI_lite_3star.sdf.gz')):
+        
+        # récupération du .sdf.gz
+        r = requests.get(url)
+        path_file = os.path.join(lib_path, 'ChEBI_lite_3star.sdf.gz')  
+        with open(path_file, 'wb') as f:
+            f.write(r.content)
+
+        # extraction du .gz
+        with gzip.open(path_file,"rb") as f_in, open(os.path.join(lib_path,'ChEBI_lite_3star.sdf'),"wb") as f_out:
+            shutil.copyfileobj(f_in, f_out)
+
+
+'''
 #Téléchargement, extraction du fichier des 50000 molécules 3 stars de Chebi (format sdf)
 def telechargement():
 
@@ -31,7 +59,7 @@ def telechargement():
     with gzip.open(loc, 'rb') as file_in:
         with open(new_file, 'wb') as file_out:
             shutil.copyfileobj(file_in, file_out)
-
+'''
 #Créer un dossier pour contenir les molécules au format personnalisé s'il n'existe pas
 def creation_dossier_mol():
     try:

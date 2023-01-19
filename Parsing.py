@@ -28,8 +28,16 @@ def parsing():
     
     #Parsing sur toutes les molécules 3 stars
 
+    # récupération du chemin de l'utilisateur
+    current_path = os.path.abspath("parsing.py")
+    path_len = len(current_path)
+    len_to_delete = len("parsing.py")
+    lib_path = current_path[:path_len-len_to_delete]
+    
+    # téléchargement et extration du fichier sdf si il n'existe pas 
+    if not os.path.exists(os.path.join(lib_path, 'ChEBI_lite_3star.sdf')):
+        telechargement(lib_path)
 
-    #telechargement()
     suppl = Chem.SDMolSupplier('ChEBI_lite_3star.sdf', sanitize = False) #Lecture fichier sdf et transformation en tableau de mol
     fichier = open('ChEBI_lite_3star.sdf', 'r') #Ouverture fichier sdf pour récupérer ids chebi et noms molécules
     lines=fichier.readlines()
@@ -93,15 +101,15 @@ def parsing():
             infos += indice_e(mol)
 
             #Recherche des voisins de chaque atome 
-            res = voisins_atomes(mol)
+            res = voisins_atomes(mol) 
             infos += res[1] #e
-
+            infos += '\n'
             
             spt=''
             for s in molecu:
                 spt = spt + s +' '
             infos += spt[:-1] + "\n"
-
+            
             #Nombre de types d'atomes différents
             infos += types_atomes(mol)
 
