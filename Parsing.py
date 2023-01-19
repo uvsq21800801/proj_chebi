@@ -96,6 +96,12 @@ def parsing():
             res = voisins_atomes(mol)
             infos += res[1] #e
 
+            
+            spt=''
+            for s in molecu:
+                spt = spt + s +' '
+            infos += spt[:-1] + "\n"
+
             #Nombre de types d'atomes différents
             infos += types_atomes(mol)
 
@@ -104,17 +110,13 @@ def parsing():
             #Ajout de la formule de molécule
             infos += "\n" + formuledecomp + nommolecule 
 
-            spt=''
-            for s in molecu:
-                spt = spt + s +' '
-            infos += spt + "\n"
 
 
             for s in L: 
                 strong=''
                 for p in s:
                     strong = strong + p + ' '
-                infos += strong + "\n"
+                infos += strong[:-1] + "\n"
 
             #Cequ'on  ecrit dans le fichier
             #infosDebut contient un bit si molécule est lue ou non, nombre d'atomes de la molécule, de liaisons et taille de d, v et e
