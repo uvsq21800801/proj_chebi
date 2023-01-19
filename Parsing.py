@@ -109,14 +109,14 @@ def parsing():
             for s in molecu:
                 spt = spt + s +' '
             infos += spt[:-1] + "\n"
-            
+            infos += nommolecule
             #Nombre de types d'atomes différents
             infos += types_atomes(mol)
 
             #Calcul formule
             formuledecomp = formule_molecule(mol)
             #Ajout de la formule de molécule
-            infos += "\n" + formuledecomp + nommolecule 
+            infos += "\n" + formuledecomp   
 
 
 
