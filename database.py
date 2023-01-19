@@ -1,6 +1,7 @@
 import sqlite3
 from sqlite3 import Error
 from unittest import expectedFailure
+import os
 
 # tutorial to create db
 # https://www.sqlitetutorial.net/sqlite-python/creating-database/
@@ -14,60 +15,125 @@ def print_table(connection_obj, cursor_obj):
         cursor_obj.execute("SELECT * FROM ENTITIES")
         print(cursor_obj.fetchall())
 
-def create_connection(db_file):
-    #####
-    # 1 - create database and table
-    #####
-    # create a database connection to a SQLite database
-    connection_obj = sqlite3.connect(db_file)
+# constuction de la base de donnée la première fois 
+# qu'on lance le programme
+### DOIT ETRE LANCÉ APRÈS LE PARSING ###
+def db_init():
     
-    # creation of a cursor object
-    # (I assume its purpose is to iterate through the db)
-    cursor_obj = connection_obj.cursor()
+    # récupération du chemin de l'utilisateur
+    current_path = os.path.abspath("database.py")
+    path_len = len(current_path)
+    len_to_delete = len("database.py")
+    db_path = current_path[:path_len-len_to_delete]
+
+    # si la bdd n'existe pas la créer
+    if not os.path.exists(os.path.join(db_path, 'index.db')):
+        file = os.path.join(db_path, 'index.db')
+        try:
+            conn = sqlite3.connect(file)
+            print("Base de Données index.db crée")
+        except:
+            print("echec de création de la Base de Données") 
+
+    # chargement des des noms et ID de molécules dans la table
+    # non filtrée
+    load_id_and_name() 
+
+    # chargement de tables par nombre d'atomes
+    # TODO
+
+    # chargement de la table de chaines
+    # TODO
+
+    # chargement de tables par type d'atomes présent
+    # TODO
+
+    #...
+
+def load_id_and_name():
+    sqliteConnection = sqlite3.connect('index.db')
+
+    c = sqliteConnection.cursor()
+    # creation de la table des entités
+    c.execute("""CREATE TABLE IF NOT EXISTS entity (
+                    e_id integer NOT NULL, 
+                    name text,
+                    PRIMARY KEY (e_id)
+                )""")
+
+    # insertion des valeurs
+    dir = os.path.abspath("Molecules")
+    for filename in os.listdir(dir):
+        
+        try: 
+            f = os.path.join(dir, filename)
+            text_file = open(f, "r")
+            lines = text_file.read().split('\n')
+            
+            if not lines[1][:len('Erreur')] == 'Erreur':
+                
+                #print(filename[:len(filename)-4])
+                e_id = int(filename[:len(filename)-4])
+                #print(filename)
+                name = lines[7]
+                
+                c.execute("INSERT INTO entity VALUES(:e_id,:name)",{'e_id':e_id, 'name':name})
+        
+        except:
+            print('erreur insert (exist peut-être déjà)'+str(filename))
+            # apparemment ya un fichier appelé ErreurMolecule lol what?
+
+    sqliteConnection.commit()
+    sqliteConnection.close()
+
+# attrappe le filepath et le nom de l'entité
+def get_entity_from_id(e_id):
+
+    sqliteConnection = sqlite3.connect('index.db')
+
+    c = sqliteConnection.cursor()
     
-    #####
-    # 2 - fill the table
-    #####
+    c.execute("SELECT * FROM entity WHERE e_id=:e_id", {'e_id': e_id})
 
-    ##### the code underneath is here to test
-    ##### After testing, the user should have the choice to
-    ##### reinitialise the database or keep the precedent
-    ##### (or with more simplicity it could be a IF EXIST)
-    # Drop the ENTITIES table if already exists
-    cursor_obj.execute("DROP TABLE IF EXISTS ENTITIES")
+    id, name = c.fetchall()[0]
+
+    filepath = os.path.abspath(str(id)+".txt")
+
+    sqliteConnection.close()
+
+    return filepath, name
+
+# attrappe le filepath et l'id de l'entité
+def get_entity_from_name(name):
+    sqliteConnection = sqlite3.connect('index.db')
+
+    c = sqliteConnection.cursor()
     
-    # call the function that create the table to get an empty table
-    # (IF EXIST not added yet for the purpose of testing)
-    table = create_table()
+    c.execute("SELECT * FROM entity WHERE name=:name", {'name': name})
 
-    cursor_obj.execute(table)
+    id, name = c.fetchall()[0]
 
-    # first print
-    print("first print")
-    print_table(connection_obj, cursor_obj)
+    filepath = os.path.abspath(str(id)+".txt")
 
-    insert_entity(cursor_obj)
+    sqliteConnection.close()
 
-    # second print
-    print("second print")
-    print_table(connection_obj, cursor_obj)
-
-    insert_entity(cursor_obj)
-
-    # third print
-    print("third print")
-    print_table(connection_obj, cursor_obj)
-
-    #####
-    # 3 - User request something that uses the db
-    #####
-
-    # todo
+    return filepath, name
 
 
 
-    # Close the connection
-    connection_obj.close()
+def load_taille():
+
+    print('todo')
+
+
+def load_chaines():
+
+    print('todo')
+
+def load_atom_present():
+
+    print('todo')
+
 
 # to complete if needed
 def create_table():
@@ -82,8 +148,8 @@ def create_table():
 
     return table
             
-# todo
-def insert_entity(cursor_obj): # it should then have the args directly in the params
+# obselete
+def insert_entity_old(cursor_obj): # it should then have the args directly in the params
 
     # the code below is an example
     insert_query = """INSERT INTO ENTITIES
@@ -105,4 +171,18 @@ def extract_all():
 #   //code    
 
 if __name__ == '__main__':
-    create_connection(r"db_folder/pythonsqlite.db")
+
+    
+    # intitialisation de la base de donnée
+    db_init()
+
+
+    # test select
+
+    filepath_1400082 , name_1400082 = get_entity_from_id(140082)
+    print("filepath_1400082 = "+str(filepath_1400082))
+    print("name_1400082 = "+str(name_1400082))
+    
+    filepath_glucoalyssin, name_glucoalyssin = get_entity_from_name('glucoalyssin')
+    print("filepath_glucoalyssin = "+str(filepath_glucoalyssin))
+    print("name_glucoalyssin = "+str(name_glucoalyssin))
