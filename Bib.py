@@ -134,6 +134,34 @@ def get_matrix(lines, j, nbatom):
     return result
 
 
+def get_matrix_liaisons(L,nbatom):
+    
+    result=L
+    i=0
+    for item in L:
+        
+        if int(item[2])==2:
+            nbatom += 1
+            result.append([item[0],str(nbatom),'1'])
+            result.append([item[1],str(nbatom),'1'])
+
+        elif int(item[2])==3:
+            nbatom += 1
+            result.append([item[0],str(nbatom),'1'])
+            result.append([item[1],str(nbatom),'1'])
+
+            nbatom += 1
+            result.append([item[0],str(nbatom),'1'])
+            result.append([item[1],str(nbatom),'1'])
+
+    res=[]
+    for it in result:
+        if int(it[2])==1 :
+            res.append(it)
+
+    return res,nbatom
+
+
 
 #Calcul formule de la molécule
 def formule_molecule(molecule):
