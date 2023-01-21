@@ -10,27 +10,12 @@
 #include "nausparse.h"    /* which includes nauty.h */
 #include <ctype.h>
 
-unsigned int encode_string(char *string) {
-    unsigned int encoded = 0;
-    for (int i = 0; string[i] != '\0'; i++) {
-        encoded += (unsigned int)string[i];
-    }
-    return encoded;
-}
-
 
 int compare(const void* a, const void* b) {
     int x = *(int*)a;
     int y = *(int*)b;
     return x - y;
 }
-
-
-// fonction de comparaison des étiquettes des arcs
-int edge_compare(int *edges1, int *edges2, int v, int w) {
-    return edges1[v*MAXN + w] == edges2[v*MAXN + w];
-}
-
 
 
  void lire_sparse_graphe_fichier_molecule(int id_molecule, sparsegraph* sg, int** liste_atomes){
@@ -125,10 +110,12 @@ int edge_compare(int *edges1, int *edges2, int v, int w) {
 			int coded;
 			while (token != NULL) {
 				if(token[0] != " "){
-				coded =  encode_string(token); // coder l'atome vers un entier
-				liste_atomes[i] = coded;
-				token = strtok(NULL, " ");	
-				i++;
+						//printf("\nliste[%d] = %c",i,token[0]);
+						coded = (int) token[0];
+						liste_atomes[i] = coded;
+						//printf("liste_atomes[%d] = %d\n", i, liste_atomes[i]);
+						token = strtok(NULL, " ");	
+						i++;	
 				}
         	}
 		}
@@ -145,8 +132,10 @@ void colorer_graphe(int T[], int n, int lab[], int ptn[]) {
 	int T2[n];
 	int i;
     int z = 0;
+    //printf("la liste des atomes = \n");
     while(z < n){
     	T2[z] = T[z];
+    	printf("T[%d] = %d", z, T[z]);
     	z++;
 	}
 	int stop = 0;
@@ -260,9 +249,9 @@ main(int argc, char *argv[])
     DYNALLOC1(int,map,map_sz,n,"malloc");
 
     id_molecule1 = atoi(argv[1]);
-    printf("molecule 1 = %d", id_molecule1);
+    //printf("molecule 1 = %d", id_molecule1);
     id_molecule2 = atoi(argv[2]);
-    printf("\nmolecule 2 = %d", id_molecule2);
+    //printf("\nmolecule 2 = %d", id_molecule2);
     
     sparsegraph sg1;
 	SG_INIT(sg1);
@@ -293,6 +282,7 @@ main(int argc, char *argv[])
 	}
 	
 	colorer_graphe(T, sg2.nv, lab2, ptn2); // Colorer le 2eme graphe.
+	
 	
     /*on applique sparse nauty sur les deux graphes */
     sparsenauty(&sg1,lab1,ptn1,orbits,&options,&stats,&cg1);
