@@ -92,7 +92,7 @@ def parsing():
             nbbond = mol.GetNumBonds()
             infos = ""
 
-            infosDebut = "1\n" + str(nbatom) + "\n" + str(nbbond) 
+            infosDebut = str(nbatom) + "\n" + str(nbbond) 
 
             #Récupération degrés atomes..
             infos += "\n" + degre_atomes(mol)

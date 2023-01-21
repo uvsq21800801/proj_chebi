@@ -75,7 +75,7 @@ def load_id_and_name():
                 #print(filename[:len(filename)-4])
                 e_id = int(filename[:len(filename)-4])
                 #print(filename)
-                name = lines[7]
+                name = lines[6]
                 
                 c.execute("INSERT INTO entity VALUES(:e_id,:name)",{'e_id':e_id, 'name':name})
         
