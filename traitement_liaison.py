@@ -84,6 +84,11 @@ def parsing():
             j = 4 + S 
             molecu = molecules(lines,j,mol.GetNumAtoms())
 
+            deg = get_degree(L_new,nbat)
+
+            ind = get_indice(deg)
+
+            vos = get_voisins(L_new,nbat)
 
             name = "Molecule_" + str(i) + ".txt"
             repertoire = "Molecules/" + idmolecule[6:] + ".txt"
@@ -96,14 +101,13 @@ def parsing():
             infosDebut = str(nbatom) + "\n" + str(nbbond) 
 
             #Récupération degrés atomes..
-            infos += "\n" + degre_atomes(mol)
+            infos += "\n" + ' '.join(str(x) for x in deg) +"\n"
 
             #Calcul indice de début de chaque atome 
-            infos += indice_e(mol)
+            infos += ' '.join(str(x) for x in ind) +"\n"
 
-            #Recherche des voisins de chaque atome 
-            res = voisins_atomes(mol) 
-            infos += res[1] #e
+
+            infos += ' '.join(str(x) for x in vos) #e
             infos += '\n'
             
             spt=''
@@ -142,9 +146,8 @@ def parsing():
             outf.write(infosFinal)
             outf.close()
 
-            k +=1
-            if k==10:
-                break
+            k += 1
+            if k==1: break
 
         else:
             #Molécule pas lue
