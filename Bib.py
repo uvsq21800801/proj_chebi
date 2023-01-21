@@ -189,6 +189,43 @@ def degre_atomes(molecule):
         degres += str(a.GetDegree()) + " "
     return degres
 
+
+def get_degree(L,nb):
+    L_new = [ [int(s[0]),int(s[1])] for s in L]
+    result=[]
+
+    for s in range(1,nb+1,1):
+        cpt=0
+        for item in L_new:
+            if s in item:
+                cpt += 1
+        result.append(cpt)
+    return result
+
+def get_indice(L):
+    result=[]
+    result.append(0)
+    i=0
+    for item in L:
+        result.append(result[i]+item)
+        i += 1
+    return result
+
+def get_voisins(matrice,nb):
+    L_new = [ [int(s[0]),int(s[1])] for s in matrice]
+    result = []
+    for s in range(1,nb+1,1):
+        
+        for item in L_new:
+            if s in item:
+                if item[0]==s:
+                    result.append(item[1])
+                else : 
+                    result.append(item[0])
+    return result
+
+    
+
 #Calcul indice de début de chaque atome dans e 
 def indice_e(molecule):
     atomes = molecule.GetAtoms()
