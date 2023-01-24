@@ -1,7 +1,33 @@
 import ctypes
-
+import os
 
 def interface():
+
+    # programme temporaire simple
+    # ce serait cool de le remplacer avec une barre
+    # de recherche qui utilise la bdd
+    # input
+    id_1 = input("Entrez une PREMIERE id de molecule chebi: ")
+    id_2 = input("Entrez une SECONDE id de molecule chebi: ")
+
+    # output
+    #print(id_1)
+    #print(id_2)
+
+    if not os.path.isfile("store_colours.txt"):
+        f = open("appel_sparce_c.sh", "x")
+    else:
+        f = open("appel_sparce_c.sh", "w")
+    txt =''
+    if not os.path.isfile("sparse_run"):
+        txt = 'gcc -o sparse_run Sparse.c nauty2_8_6/nausparse.h nauty2_8_6/nauty.a\n'
+    txt += './sparse_run '+str(id_1)+' '+str(id_2)
+
+    f.write(txt)
+
+    # ce serait aussi bien d'afficher les molécules séléctionnées
+
+
     print('interface avec appel de nauty TODO')
 
     # demande deux id/noms aux utilisateurs avec boucles de faux dans le cas

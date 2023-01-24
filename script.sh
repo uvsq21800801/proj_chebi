@@ -9,3 +9,5 @@ make
 cd ..
 
 python3 interface_u.py
+
+bash appel_sparce_c.sh
