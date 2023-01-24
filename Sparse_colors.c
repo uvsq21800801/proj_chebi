@@ -10,6 +10,12 @@
 #include "nauty2_8_6/nausparse.h"    /* which includes nauty.h */
 #include <ctype.h>
 
+int compare(const void* a, const void* b) {
+    int x = *(int*)a;
+    int y = *(int*)b;
+    return x - y;
+}
+
 unsigned int encode_string(char *string) {
     unsigned int encoded = 0;
     for (int i = 0; string[i] != '\0'; i++) {
@@ -18,34 +24,35 @@ unsigned int encode_string(char *string) {
     return encoded;
 }
 
-
-int compare(const void* a, const void* b) {
-    int x = *(int*)a;
-    int y = *(int*)b;
-    return x - y;
+int belongs(int T1[], int T2[], int size1, int size2) {
+    for (int i = 0; i < size1; i++) {
+        int found = 0;
+        for (int j = 0; j < size2; j++) {
+            if (T1[i] == T2[j]) {
+            	//printf(" \nfound T1[i] = %d", T1[i]);
+                found = 1;
+                break;
+            }
+        }
+        if (!found) {
+            return 0;
+        }
+    }
+    return 1;
 }
-
-
-// fonction de comparaison des �tiquettes des arcs
-int edge_compare(int *edges1, int *edges2, int v, int w) {
-    return edges1[v*MAXN + w] == edges2[v*MAXN + w];
-}
-
 
 
  void lire_sparse_graphe_fichier_molecule(int id_molecule, sparsegraph* sg, int** liste_atomes){
+ 	
 	
-	printf("\nMol�cule %d : \n", id_molecule);
 	FILE * fp;
 	//l'id de la molecule converti en string
 	char* nom_fichier;
 	nom_fichier = (char*) malloc(sizeof(char) * 100);
     sprintf(nom_fichier, "Molecules/%d", id_molecule);
-    strcat(nom_fichier, ".txt");
+	strcat(nom_fichier, ".txt");
     
     /*Ouvrir le fichier*/
-	printf(nom_fichier);
-	printf("\n");
    	fp = fopen (nom_fichier, "rb+");
    	
    	if (fp == NULL) {
@@ -75,7 +82,6 @@ int edge_compare(int *edges1, int *edges2, int v, int w) {
         		}
 		}
 		if(lineCount == 2){
-			
 			while (token != NULL) {
 		            nb_bonds = atoi(token)*2;
 		            token = strtok(NULL, " ");
@@ -127,10 +133,15 @@ int edge_compare(int *edges1, int *edges2, int v, int w) {
 			int coded;
 			while (token != NULL) {
 				if(token[0] != " "){
-				coded =  encode_string(token); // coder l'atome vers un entier
-				liste_atomes[i] = coded;
-				token = strtok(NULL, " ");	
-				i++;
+					if(i < nb_sommets - 1){
+						coded = encode_string(token);
+					}else{
+						coded = (int) token[0];	
+					}
+						liste_atomes[i] = coded;
+						printf("liste_atomes[%d] = %d\n", i, liste_atomes[i]);
+						token = strtok(NULL, " ");	
+						i++;	
 				}
         	}
 		}
@@ -141,14 +152,15 @@ int edge_compare(int *edges1, int *edges2, int v, int w) {
 }
 
 
-
 // une methode qui va � partir de la liste d'atomes de ma molecule cr�e les tableaux ptn et lab pour le coloriage des graphs.
 void colorer_graphe(int T[], int n, int lab[], int ptn[]) {
 	int T2[n];
 	int i;
     int z = 0;
+    //printf("la liste des atomes = \n");
     while(z < n){
     	T2[z] = T[z];
+    	//printf("T[%d] = %d", z, T[z]);
     	z++;
 	}
 	int stop = 0;
@@ -180,7 +192,7 @@ void colorer_graphe(int T[], int n, int lab[], int ptn[]) {
 		i++;
 		if(i == n){
 			checking = 0;
-		}
+			}
     	}
     	e = e+1;
     	
@@ -262,9 +274,9 @@ main(int argc, char *argv[])
     DYNALLOC1(int,map,map_sz,n,"malloc");
 
     id_molecule1 = atoi(argv[1]);
-    printf("molecule 1 = %d", id_molecule1);
+    //printf("molecule 1 = %d", id_molecule1);
     id_molecule2 = atoi(argv[2]);
-    printf("\nmolecule 2 = %d", id_molecule2);
+    //printf("\nmolecule 2 = %d", id_molecule2);
     
     sparsegraph sg1;
 	SG_INIT(sg1);
@@ -275,7 +287,8 @@ main(int argc, char *argv[])
 	int* types_atomes_g2[100];
 	
 	int T[100] ;
-    
+    int T1[100];
+    int T2[100];
     lire_sparse_graphe_fichier_molecule(id_molecule1,&sg1,types_atomes_g1);
     lire_sparse_graphe_fichier_molecule(id_molecule2, &sg2,types_atomes_g2);
     
@@ -283,6 +296,7 @@ main(int argc, char *argv[])
     int z = 0;
     while(z < sg1.nv){
     	T[z] = types_atomes_g1[z];
+    	T1[z] = types_atomes_g1[z];
     	z++;
 	}
 	
@@ -291,14 +305,26 @@ main(int argc, char *argv[])
 	z = 0;
     while(z < sg2.nv){
     	T[z] = types_atomes_g2[z];
+    	T2[z] = types_atomes_g2[z];
     	z++;
 	}
 	
 	colorer_graphe(T, sg2.nv, lab2, ptn2); // Colorer le 2eme graphe.
 	
+	int belong1 =	belongs(T1, T2, sg1.nv, sg2.nv);
+	int belong2 = belongs(T2, T1, sg2.nv, sg1.nv);
+
+	
+	
     /*on applique sparse nauty sur les deux graphes */
     sparsenauty(&sg1,lab1,ptn1,orbits,&options,&stats,&cg1);
     sparsenauty(&sg2,lab2,ptn2,orbits,&options,&stats,&cg2);
+    
+    if((belong1 && belong2) == 0){
+    	printf("\nLes graphes ne sont pas isomorphes.\n");
+    	//printf("Press ENTER key to Continue\n");
+    	return 0;
+	}
     
     if (aresame_sg(&cg1,&cg2))
         {
@@ -311,8 +337,6 @@ main(int argc, char *argv[])
             printf("Press ENTER key to Continue\n");  
 			getchar();
             return 0;
-    	}
-		
-	    
+    	}  
     
 }

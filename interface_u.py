@@ -20,9 +20,10 @@ def interface():
         f = open("appel_sparce_c.sh", "w")
     txt =''
     if not os.path.isfile("sparse_run"):
-        txt = 'gcc -o sparse_run Sparse.c nauty2_8_6/nausparse.h nauty2_8_6/nauty.a\n'
+        txt = 'gcc -o sparse_run Sparse_colors.c nauty2_8_6/nausparse.h nauty2_8_6/nauty.a\n'
     txt += './sparse_run '+str(id_1)+' '+str(id_2)
-
+    txt += '\npython3 interface_u.py'
+    txt += '\nbash appel_sparce_c.sh'
     f.write(txt)
 
     # ce serait aussi bien d'afficher les molécules séléctionnées
