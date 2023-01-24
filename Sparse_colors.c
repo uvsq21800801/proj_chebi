@@ -16,6 +16,14 @@ int compare(const void* a, const void* b) {
     return x - y;
 }
 
+unsigned int encode_string(char *string) {
+    unsigned int encoded = 0;
+    for (int i = 0; string[i] != '\0'; i++) {
+        encoded += (unsigned int)string[i];
+    }
+    return encoded;
+}
+
 int belongs(int T1[], int T2[], int size1, int size2) {
     for (int i = 0; i < size1; i++) {
         int found = 0;
@@ -35,6 +43,7 @@ int belongs(int T1[], int T2[], int size1, int size2) {
 
 
  void lire_sparse_graphe_fichier_molecule(int id_molecule, sparsegraph* sg, int** liste_atomes){
+ 	
 	
 	FILE * fp;
 	//l'id de la molecule converti en string
@@ -73,7 +82,6 @@ int belongs(int T1[], int T2[], int size1, int size2) {
         		}
 		}
 		if(lineCount == 2){
-			
 			while (token != NULL) {
 		            nb_bonds = atoi(token)*2;
 		            token = strtok(NULL, " ");
@@ -125,10 +133,13 @@ int belongs(int T1[], int T2[], int size1, int size2) {
 			int coded;
 			while (token != NULL) {
 				if(token[0] != " "){
-						//printf("\nliste[%d] = %c",i,token[0]);
-						coded = (int) token[0];
+					if(i < nb_sommets - 1){
+						coded = encode_string(token);
+					}else{
+						coded = (int) token[0];	
+					}
 						liste_atomes[i] = coded;
-						//printf("liste_atomes[%d] = %d\n", i, liste_atomes[i]);
+						printf("liste_atomes[%d] = %d\n", i, liste_atomes[i]);
 						token = strtok(NULL, " ");	
 						i++;	
 				}
@@ -139,7 +150,6 @@ int belongs(int T1[], int T2[], int size1, int size2) {
 	fclose(fp);
 	
 }
-
 
 
 // une methode qui va à partir de la liste d'atomes de ma molecule crée les tableaux ptn et lab pour le coloriage des graphs.
@@ -324,7 +334,7 @@ main(int argc, char *argv[])
             return 1;
     	}else{
             printf("\nLes graphes ne sont pas isomorphes.\n");
-            bprintf("Press ENTER key to Continue\n");  
+            printf("Press ENTER key to Continue\n");  
 			getchar();
             return 0;
     	}  
