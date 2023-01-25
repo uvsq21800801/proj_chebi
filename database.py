@@ -2,12 +2,7 @@ import sqlite3
 from sqlite3 import Error
 from unittest import expectedFailure
 import os
-
-# tutorial to create db
-# https://www.sqlitetutorial.net/sqlite-python/creating-database/
-# 
-# tutorial to insert
-# https://pynative.com/python-sqlite-insert-into-table/
+import networkx as nx
 
 # print all the entity table
 def print_table(connection_obj, cursor_obj):
@@ -40,13 +35,27 @@ def db_init():
     load_id_and_name() 
 
     # chargement de tables par nombre d'atomes
-    # TODO
+    min, max = load_taille()
 
     # chargement de la table de chaines
-    # TODO
+    load_structures()
 
     # chargement de tables par type d'atomes présent
     # TODO
+
+    # écriture d'un fichier config_bd
+    # qui permet de sauvegarder les données liées aux tables
+    txt = str(min)+'\n'+str(max)+'\n'
+    #for l in split_txt:
+    #    txt += l+'\n'
+
+    # écriture dans le fichier
+    if not os.path.isfile("config_bd.txt"):
+        f = open("config_bd.txt", "x")
+    else:
+        f = open("config_bd.txt", "w")
+
+    f.write(txt)
 
     #...
 
@@ -70,17 +79,15 @@ def load_id_and_name():
             text_file = open(f, "r")
             lines = text_file.read().split('\n')
             
-            if not lines[1][:len('Erreur')] == 'Erreur':
+            if (not lines[1][:len('Erreur')] == 'Erreur') and (not lines[0] == '') and (not filename == 'ErreurMolecule'):
                 
-                #print(filename[:len(filename)-4])
                 e_id = int(filename[:len(filename)-4])
-                #print(filename)
                 name = lines[6]
                 
                 c.execute("INSERT INTO entity VALUES(:e_id,:name)",{'e_id':e_id, 'name':name})
         
         except:
-            print('erreur insert (exist peut-être déjà)'+str(filename))
+            print('erreur insert, existe déjà si 2e exe '+str(filename))
             # apparemment ya un fichier appelé ErreurMolecule lol what?
 
     sqliteConnection.commit()
@@ -122,53 +129,157 @@ def get_entity_from_name(name):
 
 
 def load_taille():
+    # recherche du min et max de taille de molécule
+    min = -1
+    max = -1
+    dir = os.path.abspath("Molecules")
+    for filename in os.listdir(dir):
+        try: 
+            f = os.path.join(dir, filename)
+            text_file = open(f, "r")
+            lines = text_file.read().split('\n')
+            
+            if (not lines[1][:len('Erreur')] == 'Erreur') and (not lines[0] == '') and (not filename == 'ErreurMolecule'):
+                #lst_type = lines[5].split(' ')
+                if min == -1:
+                    min = int(lines[0])
+                    max = int(lines[0])
+                else:
+                    if int(lines[0])>max:
+                        max = int(lines[0])
+                    elif int(lines[0])<min:
+                        min = int(lines[0])
+                
+        except:
+            print("error min_max loading")
+    
+    print("min: "+str(min))
+    print("max: "+str(max))
 
-    print('todo')
+    
+    sqliteConnection = sqlite3.connect('index.db')
+    c = sqliteConnection.cursor()
+    # creation de la table des entités
+    for i in range(min, max+1):
+        table_name = 'taille_'+str(i)
+        c.execute("""CREATE TABLE IF NOT EXISTS {tab} (e_id integer NOT NULL, name text, PRIMARY KEY (e_id))"""
+        .format(tab=table_name))
+
+    # insertion des valeurs dans les tables
+    dir = os.path.abspath("Molecules")
+    for filename in os.listdir(dir):
+        try: 
+            f = os.path.join(dir, filename)
+            text_file = open(f, "r")
+            lines = text_file.read().split('\n')
+            if (not lines[1][:len('Erreur')] == 'Erreur') and (not lines[0] == '') and (not filename == 'ErreurMolecule'):
+                #lst_type = lines[5].split(' ')
+                table_name = 'taille_'+lines[0]
+                e_id = int(filename[:len(filename)-4])
+                c.execute("""INSERT INTO {tab} VALUES(:e_id, :name)""".format(tab=table_name),{'e_id':e_id,'name': lines[6]})
+                
+            
+        except:
+            print('erreur insert dans taille')
+
+    
+    sqliteConnection.commit()
+    sqliteConnection.close()
+
+    return min, max
+
+def load_structures():
+    sqliteConnection = sqlite3.connect('index.db')
+
+    c = sqliteConnection.cursor()
+    # creation de la table des chaines
+    c.execute("""CREATE TABLE IF NOT EXISTS chaines (
+                    e_id integer NOT NULL, 
+                    name text,
+                    PRIMARY KEY (e_id)
+                )""")
+
+    # creation de la table des structures contenant des cycles élémentaires
+    c.execute("""CREATE TABLE IF NOT EXISTS contains_cycle_elem (
+                    e_id integer NOT NULL, 
+                    name text,
+                    PRIMARY KEY (e_id)
+                )""")
+
+    # creation de la table des structures qui sont des arbres
+    c.execute("""CREATE TABLE IF NOT EXISTS arbre (
+                    e_id integer NOT NULL, 
+                    name text,
+                    PRIMARY KEY (e_id)
+                )""")
+
+    # création d'une table contenant les molécules non classifiées
+    c.execute("""CREATE TABLE IF NOT EXISTS non_class (
+                    e_id integer NOT NULL, 
+                    name text,
+                    PRIMARY KEY (e_id)
+                )""")
+
+    dir = os.path.abspath("Molecules")
+    for filename in os.listdir(dir):
+        try: 
+            f = os.path.join(dir, filename)
+            text_file = open(f, "r")
+            lines = text_file.read().split('\n')
+            if (not lines[1][:len('Erreur')] == 'Erreur') and (not lines[0] == '') and (not filename == 'ErreurMolecule'):
+                
+                e_id = int(filename[:len(filename)-4])
+                # chaine
+                if int(lines[0]) == int(lines[1])+1:
+                    c.execute("""INSERT INTO {tab} VALUES(:e_id, :name)""".format(tab="chaines"),{'e_id':e_id,'name': lines[6]})
+                
+                else: # cycle
+                    degres = lines[2].split(' ')
+                    degres.remove('')
+                    degres = [int(i) for i in degres]
+                
+                    voisins = lines[4].split(' ')
+                    voisins.remove('')
+                    voisins = [int(i) for i in voisins]
+
+                    G = nx.Graph()
+                    iteration = 0
+                    for i in range(len(degres)):
+                        for j in range(degres[i]):
+                            G.add_edge(i, voisins[iteration+j])
+                        iteration += degres[i]
+                    cycle = nx.cycle_basis(G)
+                    # arbre
+                    if len(cycle)==0:
+                        c.execute("""INSERT INTO {tab} VALUES(:e_id, :name)""".format(tab="arbre"),{'e_id':e_id,'name': lines[6]})
+                
+                    # inserer dans cycle
+                    else:
+                        cycle_elem = False
+                        
+                        for i in cycle:
+                            if len(i)>2 and len(i)<7:
+                                cycle_elem = True
+                        if cycle_elem:
+                            c.execute("""INSERT INTO {tab} VALUES(:e_id, :name)""".format(tab="contains_cycle_elem"),{'e_id':e_id,'name': lines[6]})
+                        else:
+                            c.execute("""INSERT INTO {tab} VALUES(:e_id, :name)""".format(tab="non_class"),{'e_id':e_id,'name': lines[6]})
+
+                
+        except:
+            print('erreur insert dans structure')
+        #break
 
 
-def load_chaines():
+    sqliteConnection.commit()
+    sqliteConnection.close()
 
-    print('todo')
 
 def load_atom_present():
 
     print('todo')
 
 
-# to complete if needed
-def create_table():
-    # Creating table by writing its SQL code
-    table = """ CREATE TABLE ENTITIES (
-                id INT NOT NULL,
-                name VARCHAR(255) NOT NULL,
-                filepath VARCHAR(25) NOT NULL
-            ); """
-    ##### Afterwards, we can add more parameters and types
-    ##### so we can then filter or search of the database
-
-    return table
-            
-# obselete
-def insert_entity_old(cursor_obj): # it should then have the args directly in the params
-
-    # the code below is an example
-    insert_query = """INSERT INTO ENTITIES
-                   (id, name, filepath) 
-                   VALUES 
-                   (51321,'nitrogen','file/path/to/nitrogen')"""
-
-    cursor_obj.execute(insert_query)
-
-    
-
-# todo/ not sure if we should be doing it like that
-def extract_all():
-    print('extract all')
-
-# idea
-# 
-# def extract_[type/by certain caracteristic]():
-#   //code    
 
 if __name__ == '__main__':
 
@@ -179,10 +290,10 @@ if __name__ == '__main__':
 
     # test select
 
-    filepath_1400082 , name_1400082 = get_entity_from_id(140082)
-    print("filepath_1400082 = "+str(filepath_1400082))
-    print("name_1400082 = "+str(name_1400082))
+    #filepath_1400082 , name_1400082 = get_entity_from_id(140082)
+    #print("filepath_1400082 = "+str(filepath_1400082))
+    #print("name_1400082 = "+str(name_1400082))
     
-    filepath_glucoalyssin, name_glucoalyssin = get_entity_from_name('glucoalyssin')
-    print("filepath_glucoalyssin = "+str(filepath_glucoalyssin))
-    print("name_glucoalyssin = "+str(name_glucoalyssin))
+    #filepath_glucoalyssin, name_glucoalyssin = get_entity_from_name('glucoalyssin')
+    #print("filepath_glucoalyssin = "+str(filepath_glucoalyssin))
+    #print("name_glucoalyssin = "+str(name_glucoalyssin))
