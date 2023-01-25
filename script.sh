@@ -8,6 +8,6 @@ cd nauty2_8_6
 make
 cd ..
 
-python3 interface_u.py
+gcc -o sparse_run Sparse.c nauty2_8_6/nausparse.h nauty2_8_6/nauty.a
 
-bash appel_sparce_c.sh
+python3 pyqt5_window.py

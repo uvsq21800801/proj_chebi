@@ -15,10 +15,15 @@ from PyQt5 import QtCore, QtWidgets
 from pyface.qt import QtGui, QtCore
 import sys
 
+import os
+
 
 class Widget(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
+
+        self.id1 = ''
+        self.id2 = ''
 
         # barre de recherche et table affichée
         self.edit = QtWidgets.QLineEdit()
@@ -27,6 +32,13 @@ class Widget(QtWidgets.QWidget):
         self.table = QtWidgets.QTableWidget()
         self.but_valid_filtre = QPushButton('Valider les filtres', self)
         self.info_barre_de_recherche = QLabel("Barre de recherche:", self)
+
+        header = self.table.horizontalHeader()       
+        header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)       
+        
+        self.table.selectionModel().selectionChanged.connect(
+            self.on_selectionChanged
+        )
 
         # on cherche dans le fichier de config
         f = 'config_bd.txt'
@@ -39,7 +51,7 @@ class Widget(QtWidgets.QWidget):
         self.info_min_max = QLabel(min_max_txt, self)
 
         # radio/toggle chaines
-        self.info_structure = QLabel("2-Choix de la structure de l'entité", self)
+        self.info_structure = QLabel("2-Choix du type de structure de l'entité", self)
         #self.radio_choice = QtWidgets.QWidget(Widget)
         self.group_radio = QButtonGroup()
         self.group_radio.setExclusive(False)
@@ -55,19 +67,33 @@ class Widget(QtWidgets.QWidget):
         
         
         # slider pour le choix de taille de molécule
-        # 
         self.min = QtWidgets.QLineEdit()
         self.max = QtWidgets.QLineEdit()
 
         # bouton de validation des filtes
 
-        # 
+        #### selection et exec nauty
+        #label iso info
+        self.info_iso = QLabel("Entités à selectionner pour tester l'iomorphisme:\n(vous pouvez n'en sélectionner qu'un pour tester son isomorphisme à lui-même)", self)
+        
+        # molécule 1 choisie
+        self.mol_1 = QLabel("Entité 1: id = ,nom =", self)
+
+        # molécule 2 choisie
+        self.mol_2 = QLabel("| Entité 2: id = ,nom =", self)
+
+        # bouton pour vider les deux label molécules
+        self.but_reset_choice = QPushButton('Vider la séléction', self)
+        
+        # bouton pour lancer l'isomorphsime
+        self.but_iso = QPushButton('Tester l\'isomorphisme', self)
+        
+        #label resultat isomorphisme
+        self.resultat_iso = QLabel("[Lire le résultat dans le terminal]", self)
+        
+
+        # remplissage de la grille de widgets
         grid = QtWidgets.QGridLayout(self)
-        grid.addWidget(self.info_barre_de_recherche,40,0)
-        grid.addWidget(self.edit, 41, 0)
-        grid.addWidget(self.combo, 41, 1)
-        grid.addWidget(self.table, 42, 0, 42, 3)
-        grid.addWidget(self.but_valid_filtre, 39, 0)
         grid.addWidget(self.info_min_max, 3, 0)
         grid.addWidget(self.min, 4, 0)
         grid.addWidget(self.max, 4, 1)
@@ -77,6 +103,19 @@ class Widget(QtWidgets.QWidget):
         grid.addWidget(self.radio_cycle,6,2)
         grid.addWidget(self.radio_autre,6,3)
         
+        grid.addWidget(self.but_valid_filtre, 9, 0)
+        grid.addWidget(self.info_barre_de_recherche,11,0)
+        grid.addWidget(self.edit, 12, 0)
+        grid.addWidget(self.combo, 12, 1)
+        grid.addWidget(self.table, 13, 0, 45, 3)
+        # isomorphisme
+        grid.addWidget(self.info_iso ,60,0)
+        grid.addWidget(self.mol_1,61,0)
+        grid.addWidget(self.mol_2,61,1)
+        grid.addWidget(self.but_reset_choice,61,2)
+        grid.addWidget(self.but_iso,61,3)
+
+        grid.addWidget(self.resultat_iso,62,0,1,3)
 
         self.connection = sqlite3.connect("index.db")
 
@@ -84,7 +123,9 @@ class Widget(QtWidgets.QWidget):
         self.edit.textChanged.connect(self.filter_table)
         # self something filter
         self.but_valid_filtre.clicked.connect(self.on_click)
-
+        self.but_iso.clicked.connect(self.iso_exec)
+        self.but_reset_choice.clicked.connect(self.reset_choice)
+  
     def populate_table(self, query, values=None):
         cursor = self.connection.cursor()
         if values is None:
@@ -197,11 +238,7 @@ class Widget(QtWidgets.QWidget):
         if listOfTables != []:
             c.execute("""DROP TABLE merged;""")
             
-        # joint the agregation to the original table
-
-
-        print('PyQt5 button click')
-
+        
 
     def check_radio(self, radioButton):
         # Uncheck every other button in this group
@@ -209,11 +246,31 @@ class Widget(QtWidgets.QWidget):
             if button is not radioButton:
                 button.setChecked(False)
 
-    @QtCore.pyqtSlot(int, int)
-    def _cellclicked(self, r, c):
-        it = self.item(r, c)
-        it.setTextAlignment(QtCore.Qt.AlignCenter)
 
+    @QtCore.pyqtSlot(QtCore.QItemSelection, QtCore.QItemSelection)
+    def on_selectionChanged(self, selected, deselected):
+        id = self.table.item(selected.indexes()[0].row(), 0).text()
+        nom = self.table.item(selected.indexes()[0].row(), 1).text()
+        if self.mol_1.text() == "Entité 1: id = ,nom =":
+            self.id1 = id
+            self.mol_1.setText("Entité 1: id = "+str(id)+" ,nom = "+str(nom))
+        elif self.mol_2.text() == "| Entité 2: id = ,nom =":
+            self.id2 = id
+            self.mol_2.setText("| Entité 2: id = "+str(id)+" ,nom = "+str(nom))
+
+
+    def reset_choice(self):
+        self.mol_1.setText("Entité 1: id = ,nom =")
+        self.mol_2.setText("| Entité 2: id = ,nom =")
+        self.id1 = ''
+        self.id2 = ''
+        
+    def iso_exec(self):
+        if self.id2 != '' and self.id1 != '':
+            os.system("./sparse_run "+self.id1+" "+self.id2)
+        elif self.id1 != '':
+            os.system("./sparse_run "+self.id1+" "+self.id1)
+            
 def main():
     import sys
 

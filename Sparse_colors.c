@@ -329,13 +329,13 @@ main(int argc, char *argv[])
     if (aresame_sg(&cg1,&cg2))
         {
             printf("\nLes graphes sont isomoprhes ! \n");
-            printf("Press ENTER key to Continue\n");  
-			getchar();
+            //printf("Press ENTER key to Continue\n");  
+			//getchar();
             return 1;
     	}else{
             printf("\nLes graphes ne sont pas isomorphes.\n");
-            printf("Press ENTER key to Continue\n");  
-			getchar();
+            //printf("Press ENTER key to Continue\n");  
+			//getchar();
             return 0;
     	}  
     
