@@ -195,28 +195,32 @@ def load_structures():
     # creation de la table des chaines
     c.execute("""CREATE TABLE IF NOT EXISTS chaines (
                     e_id integer NOT NULL, 
-                    name text,
                     PRIMARY KEY (e_id)
                 )""")
 
     # creation de la table des structures contenant des cycles élémentaires
     c.execute("""CREATE TABLE IF NOT EXISTS contains_cycle_elem (
                     e_id integer NOT NULL, 
-                    name text,
+                    t_3 integer,
+                    t_4 integer,
+                    t_5 integer,
+                    t_6 integer,
+                    t_8 integer,
                     PRIMARY KEY (e_id)
                 )""")
 
     # creation de la table des structures qui sont des arbres
     c.execute("""CREATE TABLE IF NOT EXISTS arbre (
                     e_id integer NOT NULL, 
-                    name text,
                     PRIMARY KEY (e_id)
                 )""")
 
     # création d'une table contenant les molécules non classifiées
     c.execute("""CREATE TABLE IF NOT EXISTS non_class (
                     e_id integer NOT NULL, 
-                    name text,
+                    t_min integer,
+                    t_max integer,
+                    nb_c integer,
                     PRIMARY KEY (e_id)
                 )""")
 
@@ -231,7 +235,7 @@ def load_structures():
                 e_id = int(filename[:len(filename)-4])
                 # chaine
                 if int(lines[0]) == int(lines[1])+1:
-                    c.execute("""INSERT INTO {tab} VALUES(:e_id, :name)""".format(tab="chaines"),{'e_id':e_id,'name': lines[6]})
+                    c.execute("""INSERT INTO {tab} VALUES(:e_id)""".format(tab="chaines"),{'e_id':e_id})
                 
                 else: # cycle
                     degres = lines[2].split(' ')
@@ -251,19 +255,41 @@ def load_structures():
                     cycle = nx.cycle_basis(G)
                     # arbre
                     if len(cycle)==0:
-                        c.execute("""INSERT INTO {tab} VALUES(:e_id, :name)""".format(tab="arbre"),{'e_id':e_id,'name': lines[6]})
+                        c.execute("""INSERT INTO {tab} VALUES(:e_id)""".format(tab="arbre"),{'e_id':e_id})
                 
                     # inserer dans cycle
                     else:
                         cycle_elem = False
                         
+                        #for i in cycle:
+                        #    if len(i)>2 and len(i)<7:
+                        #        cycle_elem = True
+                        #if cycle_elem:
+                        t_3=0 
+                        t_4=0
+                        t_5=0
+                        t_6=0 
+                        t_8 = 0
                         for i in cycle:
-                            if len(i)>2 and len(i)<7:
-                                cycle_elem = True
-                        if cycle_elem:
-                            c.execute("""INSERT INTO {tab} VALUES(:e_id, :name)""".format(tab="contains_cycle_elem"),{'e_id':e_id,'name': lines[6]})
+                            if len(cycle) == 3:
+                                t_3 += 1
+                            if len(cycle) == 4:
+                                t_4 += 1
+                            if len(cycle) == 5:
+                                t_5 += 1
+                            if len(cycle) == 6:
+                                t_6 += 1
+                            if len(cycle) == 8:
+                                t_8 += 1
+                        if t_3 == 0 and t_4== 0 and t_5== 0 and t_6== 0 and t_8== 0:
+                            len_cycle = []
+                            for i in cycle:
+                                len_cycle.append(len(i))
+                            
+                            c.execute("""INSERT INTO {tab} VALUES(:e_id, :t_min, :t_max, :nb_c)""".format(tab="non_class"),{'e_id':e_id, 't_min':min(len_cycle), 't_max': max(len_cycle) , 'nb_c': len(cycle)})
+
                         else:
-                            c.execute("""INSERT INTO {tab} VALUES(:e_id, :name)""".format(tab="non_class"),{'e_id':e_id,'name': lines[6]})
+                            c.execute("""INSERT INTO {tab} VALUES(:e_id, :t_3, :t_4, :t_5, :t_6, :t_8)""".format(tab="contains_cycle_elem"),{'e_id':e_id, 't_3':t_3, 't_4':t_4, 't_5':t_5, 't_6':t_6, 't_8':t_8})
 
                 
         except:

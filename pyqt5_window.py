@@ -58,7 +58,7 @@ class Widget(QtWidgets.QWidget):
         self.group_radio.buttonClicked.connect(self.check_radio)
         self.radio_chaine = QtWidgets.QRadioButton("chaine")
         self.radio_tree = QtWidgets.QRadioButton("arbre")
-        self.radio_cycle = QtWidgets.QRadioButton("contient cycle élémentaire (<= 6 sommets)")
+        self.radio_cycle = QtWidgets.QRadioButton("contient cycle élémentaire (cycles de 3, 4, 5, 6 ou 8 sommets)")
         self.radio_autre = QtWidgets.QRadioButton("non_classifié")
         self.group_radio.addButton(self.radio_chaine)
         self.group_radio.addButton(self.radio_tree)
@@ -173,10 +173,13 @@ class Widget(QtWidgets.QWidget):
         
         c = self.connection.cursor()
 
-        final_command = 'SELECT * FROM entity'
+        final_command = 'SELECT * FROM entity;'
 
         min = self.min.text()
         max = self.max.text()
+
+        table_to_join_with = 'entity'
+
         # Pour savoir si on filtre la taille
         # on vérifie que les valeurs entrées sont des entiers
         if max.isdigit() and min.isdigit():
@@ -184,8 +187,6 @@ class Widget(QtWidgets.QWidget):
             min = int(min)
             max = int(max)
             if min<=max and min>= self.global_min and max <= self.global_max:
-                
-                # get table?
                 
                 # for min to max value selected agregate ids
                 select_taille_SQL = 'SELECT * FROM taille_'+str(min)
@@ -197,24 +198,31 @@ class Widget(QtWidgets.QWidget):
                 FROM ({taille_unions}) AS taille_All"""
                         .format(taille_unions=select_taille_SQL))
 
-                final_command+="""\nINTERSECT
-                            SELECT * FROM merged"""
-                
+                final_command ="""SELECT * FROM merged;"""
+                table_to_join_with = 'merged'
+
         # Filtre structure 
         if self.radio_chaine.isChecked():
-            final_command+="""\nINTERSECT
-                            SELECT * FROM chaines"""
+            final_command="""SELECT * 
+                FROM {tab} INNER JOIN chaines USING (e_id);""".format(tab=table_to_join_with) 
+                            
         elif self.radio_tree.isChecked():
-            final_command+="""\nINTERSECT
-                            SELECT * FROM arbre"""
+            final_command="""SELECT * 
+                FROM {tab} INNER JOIN arbre USING (e_id);""".format(tab=table_to_join_with) 
+                #ON {tab}.e_id = arbre.e_id;""".format(tab=table_to_join_with) 
+                            
         elif self.radio_cycle.isChecked():
-            final_command+="""\nINTERSECT
-                            SELECT * FROM contains_cycle_elem"""
+            final_command="""SELECT * 
+                FROM {tab} INNER JOIN contains_cycle_elem USING (e_id);""".format(tab=table_to_join_with) 
+                #ON {tab}.e_id = contains_cycle_elem.e_id;""".format(tab=table_to_join_with) 
+                            
+                            
         elif self.radio_autre.isChecked():
-            final_command+="""\nINTERSECT
-                            SELECT * FROM non_class"""
+            final_command="""SELECT * 
+                FROM {tab} INNER JOIN non_class USING (e_id);""".format(tab=table_to_join_with) 
+                #ON {tab}.e_id = non_class.e_id;""".format(tab=table_to_join_with) 
+                          
 
-        
         c.execute(final_command)
 
         name_of_columns = [e[0] for e in c.description]
